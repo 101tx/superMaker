@@ -1,0 +1,59 @@
+#head1 {
+
+    width: 100%;
+    height: 100px;
+    background-color: rgba(81, 67, 255, 0.72);
+    border-radius: 50px
+}
+
+#picyl {
+
+    width: 120px;
+    height: 140px;
+    background-color: rgba(29, 14, 255, 0.63);
+    text-align: center;
+    border-radius: 20px;
+}
+
+#tjkjs {
+
+    position: relative;
+    left: 120px;
+    top: -152px;
+    width: 550px;
+    height: 140px;
+    background-color: rgba(29, 14, 255, 0.66);
+    text-align: left;
+    color: snow;
+    font-size: 12px;
+    border-radius: 20px
+}
+
+#tooly {
+
+    width: 80px;
+    height: 490px;
+    position: absolute;
+    left: 1258px;
+    top: 125px;
+    border-radius: 30px;
+    background-color: rgba(29, 14, 255, 0.61);
+    text-align: center
+}
+
+#toolsz {
+
+    position: absolute;
+    z-index: 100;
+    left: 600px;
+    top: 400px;
+    width: 300px;
+    height: 200px;
+    background-color: rgba(29, 14, 255, 0.67);
+    border-radius: 20px;
+}
+
+body {
+
+    background-color: rgba(244, 162, 241, 0.25)
+}

@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>可视化编辑器</title>
+    <meta charset="utf-8">
+
+
+    <style type="text/css">
+
+
+        body {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        /* 滚动槽 */
+        ::-webkit-scrollbar-track {
+            -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+        }
+
+        /* 滚动条滑块 */
+        ::-webkit-scrollbar-thumb {
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.1);
+            -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.5);
+        }
+
+        ::-webkit-scrollbar-thumb:window-inactive {
+            background: rgba(255, 0, 0, 0.4);
+        }
+    </style>
+</head>
+
+<script src="./lib/superMaker2.js"></script>
+<!--  <link href="./css/style1.css" rel="stylesheet" type="text/css" id="css"/>-->
+<script type="text/javascript">
+
+
+///检测退出  //在载入中调用
+
+window.onbeforeunload=function (){
+    confirm("你确定离开吗？离开后您的设计将丢失！");
+}
+
+
+//////切换界面风格
+var wyjsq=-1;
+    function hfg() {
+        wyjsq++;
+        if(wyjsq>=18){
+            wyjsq=0;
+        }
+        var drs='./pic/bj'+wyjsq+'.jpg';
+        document.body.style.backgroundImage='url("'+ drs+'")';
+
+
+        var k='transparent';
+        $s("head1").style.background = k;
+        $s("tool").style.background = k;
+       // $s("tooly").style.background = k;
+        $s("toolsz").style.background = k;
+        $s("picyl").style.background = k;
+        $s("tjkjs").style.background = k;
+       // $s("timec").style.background = k;
+        $s("first").style.background = k;
+        $s("txdztool").style.background = k;
+      $s('canvas').style.border='12px solid '+'rgba(0, 0, 0, 0.62)';
+    }
+
+//////背景music
+
+
+
+function closemusic(e){
+    if(e.value=='关闭音乐'){
+        mstop('bgmusic');
+        e.value='打开音乐'
+    }else{
+
+        mplay('bgmusic');
+        e.value='关闭音乐';
+    }
+
+
+}
+/////////////////////////////////
+    new Stage(550, 480, null);
+    var selectmd;
+    var mousexz, mouseyz = 0;
+    var idcount = 0;// 元件id编号
+    Stage.init = function () {
+        $s('canvas').style.position = 'absolute';
+        $s('canvas').style.left = '8px';
+        $s('canvas').style.top = '125px';
+        $s('canvas').style.borderRadius = '10px';
+        hfg();
+        addmusic('bgmusic','./lib/background.mp3',true);
+        mplay('bgmusic');
+
+    }
+
+    Stage.update = function () {
+        Draw.clear('timec', 0, 0, 670, 80);
+        maketimeline();
+        Draw.clear('bthh', 0, 0, 1100, 200);
+        makefish();
+
+    }
+
+    //1显示预览图片；
+    function show() {
+        //以下即为完整客户端路径
+        var file_img = document.getElementById("img"), picupload = document.getElementById('picupload');
+        getPath(file_img, picupload, file_img);
+    }
+
+    //2颜色切换
+    function changeColor(e) {
+        document.getElementById("imgshadowcolor").style.color = e.value;
+    }
+    //修改背景颜色
+    function changecolor1(e) {
+        $s("backgrounds").style.color = e.value;
+        $s('canvas').style.background = e.value;
+    }
+    //修改元件阴影颜色
+    function changecolor2(e) {
+        $s("selectcolor1").style.color = e.value;
+        if ($s("bjid") != null && $s("bjid") != "") {
+            if (getCurrentzjkj($s("bjid").value) != null) {
+                getCurrentzjkj($s("bjid").value).shadow.color = e.value;
+            }
+        }
+
+    }
+
+    //bd.shadow.color;
+    //2制作时间轴
+    var base = 0;
+    var max = 34;
+    var count = 34;
+    var pik = 0;
+    var frame = new Array();
+    var framenum = 0;
+    var currentFrame = 0;//当前使用场景数
+
+    //获取当前游标下的帧数
+    function getCurrentFrame() {
+        return pik / 20 - (base / 20) + 1;
+    }
+    //初始化
+    function initframe() {
+        for (var i = 0; i < max; i++) {
+            frame.add({'num': i, 'bool': false});
+        }
+    }
+    //补帧
+    function buframe(i) {
+        frame.add({'num': i, 'bool': false});
+    }
+    initframe();
+    //时间轴
+    function maketimeline() {
+        var timec = $s('timec');
+        Draw.rect(timec, 6, 'snow', 0, new point(2 + pik, 42), new point(16, 16));
+        Draw.line(timec, 4, 'red', new point(base + 0, 37), new point(base + 800 + (max - 33) * 20, 37));
+        for (var i = 0; i < max; i++) {
+            if (!frame[i].bool) {
+                Draw.rect(timec, 2, 'snow', 0, new point(base + 20 * i, 20), new point(20, 40));
+                Draw.word(timec, false, null, (i + 1), base + 10 + 20 * i, 30, 1, 'Arial', 'center', 'snow');
+            } else {
+                Draw.rect(timec, 1, 'red', 0, new point(10 + base + 20 * i, 40), new point(2, 20));
+                Draw.rect(timec, 2, 'snow', 0, new point(base + 20 * i, 20), new point(20, 40));
+                Draw.word(timec, false, null, (i + 1), base + 10 + 20 * i, 30, 1, 'Arial', 'center', 'pink');
+            }
+        }
+    }
+
+    //播放游标下指定的场景
+    function playscan(index) {
+        for (var i = 0; i < scaneArray.length; i++) {
+            if (scaneArray[i].id == 'scan' + index) {
+                scaneArray[i].loopflag = true;
+                scaneArray[i].playflag = true;
+            } else {
+                scaneArray[i].playflag = false;
+                scaneArray[i].loopflag = false;
+            }
+        }
+
+    }
+
+    function playscano() {
+        currentFrame = getCurrentFrame();
+        if (frame[currentFrame - 1] != null && frame[currentFrame - 1].bool) {
+            playscan(currentFrame);
+        }
+
+    }
+
+    //////按键事件/////////////////
+
+    onkeydown = function (e) {
+
+        if (e.keyCode == 38) {
+            if (count > 33) {
+                count++;
+                base += -20;
+                max += 1;
+                if (frame.length < max) {
+                    buframe(max);
+                }
+
+                playscano();
+                xscjbh();
+            }
+        }
+        if (e.keyCode == 40) {
+            if (base < 0) {
+                count--
+                base += 20;
+                max += -1;
+
+                playscano();
+                xscjbh();
+            }
+        }
+        if (e.keyCode == 37) {
+            if (pik > 0) {
+                pik += -20;
+                playscano();
+                xscjbh();
+            }
+        }
+        if (e.keyCode == 39) {
+            if (pik < 640) {
+                pik += 20;
+                playscano();
+                xscjbh();
+            }
+        }
+    }
+
+
+    function addmc() {
+        if (picpath != null) {
+
+            if (framenum <= 0) {
+                alert('请先添加场景！');
+            }
+            var mc = getValueOfInput();
+            var sc = Stage.findScane('scan' + getCurrentFrame());
+            if (sc != null) {
+                addp(sc, mc.id, picpath, mc.x, mc.y, mc.w, mc.h, mc.rotate, mc.scalex, mc.scaley, mc.apl, {
+                    color: mc.shadowcolor,
+                    blur: mc.blur,
+                    offsetX: mc.offsetx,
+                    offsetY: mc.offsety
+                }, mc.spqx, mc.czqx, true);
+            } else {
+                alert("没有该场景");
+            }
+        } else {
+
+            alert("请先上传图片");
+        }
+        currentFrame = getCurrentFrame();
+        if (frame[currentFrame - 1] != null && frame[currentFrame - 1].bool) {
+            playscan(currentFrame);
+        }
+    }
+    //增加场景
+    function addframe() {
+        xscjbh();
+        if (framenum >= 0 && framenum < max) {
+            framenum++;
+            frame[framenum - 1].bool = true;
+            var scan = new Scane();
+            scan.playflag = false;
+            scan.frame = "" + framenum;
+            scan.id = 'scan' + framenum;
+            scan.nextframe = "" + (framenum + 1);
+            scan.loopflag = false;
+        }
+    }
+    //删除场景
+    function passframe() {
+        if (framenum >= 1) {
+            Stage.removeScane('scan' + framenum);
+            framenum--;
+            frame[framenum].bool = false;
+        }
+    }
+
+
+    function getValueOfInput() {
+        var obj = new Object();
+        if ($s("imgid").value == "默认") {
+            idcount++;
+            obj.id = 'mrid' + idcount;
+        } else {
+
+            obj.id = $s("imgid").value;
+        }
+        obj.x = parseFloat($s("xzb").value);
+        obj.y = parseFloat($s("yzb").value);
+        obj.w = parseFloat($s("imgw").value);
+        obj.h = parseFloat($s("imgh").value);
+        obj.scalex = parseFloat($s("imgscalex").value);
+        obj.scaley = parseFloat($s("imgscaley").value);
+        obj.apl = parseFloat($s("imgapl").value);
+        obj.spqx = parseFloat($s("imgspqx").value);
+        obj.czqx = parseFloat($s("imgczqx").value);
+        obj.blur = parseFloat($s("imgblur").value);
+        obj.offsetx = parseFloat($s("imgoffsetx").value);
+        obj.offsety = parseFloat($s("imgoffsety").value);
+        obj.shadowcolor = $s("colorsd").value;
+        obj.rotate = parseFloat($s("imgrotate").value);
+        return obj;
+    }
+
+    function getrect(bd, mx, my) {
+        if (bd != null && (bd instanceof (Object))) {
+            if ((mx >= bd.x && mx < (bd.x + bd.img.width / 4)) && (my >= bd.y && my < (bd.y + bd.img.height / 4))) {
+                return 'xz';
+            } else if ((mx >= bd.x + bd.img.width * 3 / 4 && mx < (bd.x + bd.img.width)) && (my >= bd.y && my < (bd.y + bd.img.height / 4))) {
+                return 'xz';
+            } else if ((mx >= bd.x && mx < (bd.x + bd.img.width / 4)) && (my >= bd.y + bd.img.height * 3 / 4 && my < (bd.y + bd.img.height))) {
+                return 'xz';
+            } else if ((mx >= bd.x + bd.img.width * 3 / 4 && mx < (bd.x + bd.img.width)) && (my >= bd.y + bd.img.height * 3 / 4 && my < (bd.y + bd.img.height))) {
+                return 'xz';
+            } else if ((mx > bd.x + bd.img.width / 4 && mx < bd.x + bd.img.width * 3 / 4) && (my > bd.y + bd.img.height / 4 && my < bd.y + bd.img.height * 3 / 4)) {
+                return 'center';
+
+            } else if ((mx > bd.x + bd.img.width / 4 && mx < bd.x + bd.img.width * 3 / 4) && (my > bd.y && my < bd.y + bd.img.height / 4)) {
+                return 'ls1';
+
+            } else if ((mx > bd.x + bd.img.width * 3 / 4 && mx < bd.x + bd.img.width) && (my > bd.y + bd.img.height / 4 && my < bd.y + bd.img.height * 3 / 4)) {
+                return 'ls2';
+
+            } else if ((mx > bd.x && mx < bd.x + bd.img.width / 4) && (my > bd.y + bd.img.height / 4 && my < bd.y + bd.img.height * 3 / 4)) {
+                return 'czqx';
+            } else if ((mx > bd.x + bd.img.width / 4 && mx < bd.x + bd.img.width * 3 / 4) && (my > bd.y + bd.img.height * 3 / 4 && my < bd.y + bd.img.height)) {
+                return 'spqx';
+            }
+        }
+    }
+
+    function getbdselect(mx, my) {
+
+        if (scaneArray[currentFrame - 1] != null) {
+            for (var j = scaneArray[currentFrame - 1].layer.array.length - 1; j > -1; j--) {
+                scaneArray[currentFrame - 1].layer.array[j].hitx = mx;
+                scaneArray[currentFrame - 1].layer.array[j].hity = my;
+                if (scaneArray[currentFrame - 1].layer.array[j].editflag) {
+                    return scaneArray[currentFrame - 1].layer.array[j];
+                }
+
+            }
+        }
+    }
+
+
+    function getpositions(bd, msx, msy) {
+        if (bd != null && (bd instanceof (Object))) {
+            if (getrect(bd, msx, msy) == 'ls1') {
+                canvas.style.cursor = 'n-resize';
+
+            } else if (getrect(bd, msx, msy) == 'ls2') {
+                canvas.style.cursor = 'e-resize';
+
+            } else if (getrect(bd, msx, msy) == 'center') {
+                canvas.style.cursor = 'all-scroll';
+
+            } else if (getrect(bd, msx, msy) == 'xz') {
+                canvas.style.cursor = "url('./pic/sb.cur'),default";
+            } else if (getrect(bd, msx, msy) == 'spqx') {
+                canvas.style.cursor = 'row-resize';
+            } else if (getrect(bd, msx, msy) == 'czqx') {
+                canvas.style.cursor = 'col-resize';
+            } else {
+                canvas.style.cursor = 'default';
+            }
+        }
+    }
+
+    var selectkg = false;
+    var selectkz = false;
+    addEventListener('mousemove', function (e) {
+
+        mousexz = getMousePos(canvas, e).x;
+        mouseyz = getMousePos(canvas, e).y;
+        selectmd = getbdselect(mousexz, mouseyz);
+        getpositions(selectmd, mousexz, mouseyz);
+        if (selectkg && selectmd != null) {
+            if (selectkz != null && selectkz == "center" && selectmd.sanba) {
+
+                selectmd.x = mousexz - selectmd.img.width / 2;
+                selectmd.y = mouseyz - selectmd.img.height / 2;
+
+            } else if (selectkz != null && selectkz == "xz" && selectmd.sanba) {
+                canvas.style.cursor = "url('./pic/sb.cur'),default";
+                var vsx = mousexz - selectmd.x - selectmd.img.width / 2;
+                var vsy = mouseyz - selectmd.y - selectmd.img.height / 2;
+                selectmd.rotate = Math.atan2(vsy, vsx) * 180 / Math.PI;
+
+            } else if (selectkz != null && selectkz == "ls1" && selectmd.sanba) {
+                canvas.style.cursor = 'n-resize';
+
+                selectmd.img.height = (mouseyz - selectmd.y) * 6
+
+
+            } else if (selectkz != null && selectkz == "ls2" && selectmd.sanba) {
+                canvas.style.cursor = 'e-resize';
+                selectmd.img.width = (mousexz - selectmd.x) * 5;
+
+
+            } else if (selectkz != null && selectkz == "spqx" && selectmd.sanba) {
+                canvas.style.cursor = 'row-resize';
+
+
+            } else if (selectkz != null && selectkz == "czqx" && selectmd.sanba) {
+                canvas.style.cursor = 'col-resize';
+
+
+            }
+
+
+            if (scaneArray[currentFrame - 1] != null) {
+                for (var j = scaneArray[currentFrame - 1].layer.array.length - 1; j > -1; j--) {
+                    if (scaneArray[currentFrame - 1].layer.array[j] != selectmd) {
+                        scaneArray[currentFrame - 1].layer.array[j].ckg = false;
+
+
+                    }
+
+                }
+            }
+
+
+        }
+
+
+    })
+
+    window.onmousedown = function (e) {
+
+        if (selectmd != null && mousexz < 500) {
+            selectmd.sanba = true;
+            selectmd.ckg = true;
+            scaneArray[currentFrame - 1].layer.top(selectmd);
+            selectkg = true;
+            putkjvalue(selectmd);
+            if (getrect(selectmd, mousexz, mouseyz) == 'center') {
+                selectkz = 'center';
+            } else if (getrect(selectmd, mousexz, mouseyz) == 'xz') {
+                selectkz = 'xz';
+            } else if (getrect(selectmd, mousexz, mouseyz) == 'ls1') {
+                selectkz = 'ls1';
+            } else if (getrect(selectmd, mousexz, mouseyz) == 'ls2') {
+                selectkz = 'ls2';
+            } else if (getrect(selectmd, mousexz, mouseyz) == 'spqx') {
+                selectkz = 'spqx';
+            } else if (getrect(selectmd, mousexz, mouseyz) == 'czqx') {
+                selectkz = 'czqx';
+            }
+        }
+
+
+    }
+    window.onmouseup = function (e) {
+
+        selectkg = false;
+
+        if (scaneArray[currentFrame - 1] != null) {
+            for (var j = scaneArray[currentFrame - 1].layer.array.length - 1; j > -1; j--) {
+                scaneArray[currentFrame - 1].layer.array[j].sanba = false;
+
+                if (scaneArray[currentFrame - 1].layer.array[j] != selectmd) {
+
+                    scaneArray[currentFrame - 1].layer.array[j].ckg = false;
+                }
+            }
+        }
+        canvas.style.cursor = "default";
+    }
+    //rgb(54, 61, 71)
+
+
+    //获取当前场景
+    function getCurrentScanebj() {
+        if (scaneArray[currentFrame - 1] != null) {
+            return scaneArray[currentFrame - 1];
+        }
+    }
+    //获取最近选择的元件；
+    function getCurrentzjkj(id) {
+
+
+        if (scaneArray[currentFrame - 1] != null && scaneArray[currentFrame - 1].getById(id) != null) {
+            return scaneArray[currentFrame - 1].getById(id);
+        }
+
+    }
+    /////////////制作鱼动画//////////////////////////////////////////////
+    //1加载素材
+    var imgf = new Image();
+    imgf.src = './pic/y1.png';
+    imgf.width = 50;
+    imgf.height = 50;
+    var imgd = new Image();
+    imgd.src = './pic/y2.png';
+    imgd.width = random(80) + 20;
+    imgd.height = imgd.width;
+    var imgd1 = new Image();
+    imgd1.src = './pic/y3.png';
+    imgd1.width = 60;
+    imgd1.height = 60;
+    var yukud = ['./pic/y1.png', './pic/y2.png', './pic/y3.png', './pic/y4.png', './pic/y5.png', './pic/y6.png', './pic/y7.png', './pic/y8.png'];
+    var fishx = 520, fishy = 10, fishdu = 0, fishscalex = 1, fishscaley = 1, fishapl = 1, fishsp = 0, fishcz = 0;
+    var fishx1 = 120, fishy1 = 20, fishdu1 = 0, fishscalex1 = 1, fishscaley1 = 1, fishapl1 = 1, fishsp1 = 0, fishcz1 = 0;
+    var fishx2 = 320, fishy2 = 15, fishdu2 = 0, fishscalex2 = 1, fishscaley2 = 1, fishapl2 = 1, fishsp2 = 0, fishcz2 = 0;
+    var colorfish = getAnyColor();
+    var colorfish1 = getAnyColor();
+    var colorfish2 = getAnyColor();
+    function makefish() {
+        fishx += -1;
+        fishx1 += -2;
+        fishx2 += -3;
+        if (fishx < 0) {
+
+            fishx = 1100;
+            imgd.src = yukud[rmInt(8)];
+
+            colorfish = getAnyColor();
+        }
+        if (fishx1 < 0) {
+            colorfish1 = getAnyColor();
+            fishx1 = 1100;
+            imgf.src = yukud[rmInt(8)];
+
+        }
+
+        if (fishx2 < 0) {
+            colorfish2 = getAnyColor();
+            fishx2 = 1100;
+            imgd1.src = yukud[rmInt(8)];
+
+        }
+        Draw.img('bthh', imgd, fishx, fishy, 0, 1, 1, 1, {color: colorfish, blur: 10, offsetX: 0, offsetY: 0}, 0, 0);
+        Draw.img('bthh', imgf, fishx1, fishy1, 0, 1, 1, 1, {color: colorfish1, blur: 10, offsetX: 0, offsetY: 0}, 0, 0);
+
+        Draw.img('bthh', imgd1, fishx2, fishy2, 0, 1, 1, 1, {
+            color: colorfish2,
+            blur: 10,
+            offsetX: 0,
+            offsetY: 0
+        }, 0, 0);
+    }
+
+    //////////////////////////////////////////////////////////鱼动画///////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+    ///将元件的值赋值给显示匡
+    function putkjvalue(bd) {
+        $s("bjid").value = bd.id;
+        $s("bjwidth").value = bd.img.width;
+        $s("bjheight").value = bd.img.height;
+        $s("bjscalex").value = bd.scalex;
+        $s("bjscaley").value = bd.scaley;
+        $s('bjblur').value = bd.shadow.blur;
+        $s('bjoffsetx').value = bd.shadow.offsetX;
+        $s('bjoffsety').value = bd.shadow.offsetY;
+        //  $s('bjbackcolor').value=bd.shadow.color;
+        $s('selectcolor1').style.color = bd.shadow.color;
+        $s('bjapl').value = bd.apl * 100;
+        if (bd.txkg) {
+            $s('txkgbz').innerText = "开"
+        } else {
+
+            $s('txkgbz').innerText = "关";
+        }
+    }
+
+
+    ///////////////修改元件高度///////////////////////////////////////////////////////////
+    function changeyjwidth(e) {
+        if ($s("bjid") != null && $s("bjid") != "") {
+            if (getCurrentzjkj($s("bjid").value) != null) {
+                getCurrentzjkj($s("bjid").value).img.width = parseInt(e.value);
+            }
+        }
+    }
+    function changeyjheight(e) {
+        if ($s("bjid") != null && $s("bjid") != "") {
+            if (getCurrentzjkj($s("bjid").value) != null) {
+                getCurrentzjkj($s("bjid").value).img.height = parseInt(e.value);
+            }
+        }
+    }
+    function changeyjspqx(e) {
+        if ($s("bjid") != null && $s("bjid") != "") {
+            if (getCurrentzjkj($s("bjid").value) != null) {
+                getCurrentzjkj($s("bjid").value).spqx = parseFloat(e.value) / 10;
+            }
+        }
+    }
+    function changeyjczqx(e) {
+        if ($s("bjid") != null && $s("bjid") != "") {
+            if (getCurrentzjkj($s("bjid").value) != null) {
+                getCurrentzjkj($s("bjid").value).czqx = parseFloat(e.value) / 10;
+            }
+        }
+    }
+    function changeyjapl(e) {
+        if ($s("bjid") != null && $s("bjid") != "") {
+            if (getCurrentzjkj($s("bjid").value) != null) {
+                getCurrentzjkj($s("bjid").value).apl = parseFloat(e.value / 100);
+            }
+        }
+    }
+    function changeyjscalex(e) {
+        if ($s("bjid") != null && $s("bjid") != "") {
+            if (getCurrentzjkj($s("bjid").value) != null) {
+                getCurrentzjkj($s("bjid").value).scalex = parseFloat(e.value) / 10;
+            }
+        }
+    }
+    function changeyjscaley(e) {
+        if ($s("bjid") != null && $s("bjid") != "") {
+            if (getCurrentzjkj($s("bjid").value) != null) {
+                getCurrentzjkj($s("bjid").value).scaley = parseFloat(e.value) / 10;
+            }
+        }
+    }
+
+    function changeyjblur(e) {
+        if ($s("bjid") != null && $s("bjid") != "") {
+            if (getCurrentzjkj($s("bjid").value) != null) {
+                getCurrentzjkj($s("bjid").value).shadow.blur = parseFloat(e.value);
+            }
+        }
+    }
+
+    function changeyjsetx(e) {
+        if ($s("bjid") != null && $s("bjid") != "") {
+            if (getCurrentzjkj($s("bjid").value) != null) {
+                getCurrentzjkj($s("bjid").value).shadow.offsetX = parseFloat(e.value);
+            }
+        }
+    }
+    function changeyjsety(e) {
+        if ($s("bjid") != null && $s("bjid") != "") {
+            if (getCurrentzjkj($s("bjid").value) != null) {
+                getCurrentzjkj($s("bjid").value).shadow.offsetY = parseFloat(e.value);
+            }
+        }
+    }
+
+    ///删除选中元件
+    function delmv() {
+        if ($s("bjid") != null && $s("bjid") != "") {
+            if (getCurrentzjkj($s("bjid").value) != null) {
+                getCurrentScanebj().getById($s("bjid").value).die = true;
+
+                //getCurrentScanebj().del($s("bjid").value);
+            }
+        }
+
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+</script>
+
+
+<body style="background-image:url('./pic/bj1.jpg');background-repeat: no-repeat;background-size:100% ;overflow: hidden;font-weight: 600;font-style:inherit">
+
+
+<div id="first" style="width: 100%;height: 620px;background-color:snow;border-radius: 50px">
+    <div id="head1" style="width:100%;height:100px;background-color: rgb(170, 53, 112);border-radius:50px">
+        <p style="color: snow;position: absolute;left:10px;top:80px;"><input type="button"
+                                      style="background-color: transparent;color: snow;border-radius: 15px;" value="切换风格"
+                                      onclick="hfg();">
+        </p>
+
+
+
+        <p style="color: snow;position: absolute;left:100px;top:80px;"><input type="button"
+                                                                             style="background-color: transparent;color: snow;border-radius: 15px;" value="关闭音乐"
+                                                                             onclick="closemusic(this);">
+        </p>
+        <br>
+        &nbsp<img src="./pic/tx.png">
+        <canvas id="bthh" width="1100" height="100"
+                style="position:absolute;left:300px;top:16px;background-color: transparent;;border-radius:20px"></canvas>
+    </div>
+
+</div>
+<canvas id="timec" width="670" height="80"
+        style=" position:absolute;left:585px;top:125px;background-color: rgba(0, 0, 0, 0.62);border-radius: 20px;"></canvas>
+<input type="button" onclick="addframe();" value="增加场景" id="addframe1"
+       style="background-color: rgba(114, 107, 10, 0.16);border: 1px solid orange;color:snow;position: absolute;left:620px;top:185px;border-radius: 5px;">
+<input type="button" onclick="passframe();" value="删除场景" id="passframe1"
+       style="background-color: rgba(114, 107, 10, 0.16);border: 1px solid greenyellow;color: snow;position: absolute;left:700px;top:185px;border-radius: 5px">
+
+
+<div style="position: absolute;left:585px;top:200px;width:800px;height:142px;text-align: center;">
+    <input style="display: none" type='file' id='picupload' onchange='show()' value=''/>
+
+    <div id="picyl"
+         style="width: 120px;height:140px ;background-color:rgb(172, 53, 113);text-align: center;border-radius:20px;">
+        <p style="color:snow;">图片预览</p>
+        <img id='img' src='./pic/0.png' style="height: 100px;width: 100px;text-align: center;margin: 0 auto;" alt=''/>
+    </div>
+    <div id="tjkjs"
+         style="position:relative;left:120px;top:-152px;width:550px;height:140px;background-color: rgb(166, 38, 102);text-align: left;color:snow;font-size: 12px;border-radius: 20px">
+        <p>&nbspX轴坐标:<input type="text" id="xzb" value="100" onfocus="javascript:if(value=='100'){ value=''}"
+                            onblur="javascript:if(value==''){value='100'}"
+                            style="height: 20px;width: 50px;color:snow;background-color:rgba(55, 27, 17, 0.52);border: 0;border-radius: 15px">&nbspY轴坐标:<input
+                type="text" id="yzb" value="100" onfocus="javascript:if(value=='100'){ value=''}"
+                onblur="javascript:if(value==''){value='100'}"
+                style="height: 20px;width: 50px;color:snow;background-color:rgba(55, 27, 17, 0.52);border: 0;border-radius: 15px;">
+            长度值:<input type="text" id="imgw" value="100" onfocus="javascript:if(value=='100'){ value=''}"
+                       onblur="javascript:if(value==''){value='100'}"
+                       style="height: 20px;border-radius: 15px;width: 50px;color:snow;background-color:rgba(55, 27, 17, 0.52);border: 0;">&nbsp宽度值:<input
+                    type="text" id="imgh" value="100" onfocus="javascript:if(value=='100'){ value=''}"
+                    onblur="javascript:if(value==''){value='100'}"
+                    style="height: 20px;width: 50px;color:snow;background-color:rgba(55, 27, 17, 0.52);border: 0;border-radius: 15px;">&nbsp
+            ID 编号:<input
+                    type="text" id="imgid" readonly="true" value="默认" onfocus="javascript:if(value=='a100'){ value=''}"
+                    onblur="javascript:if(value==''){value='a100'}"
+                    style="height: 20px;width: 50px;color:snow;background-color:rgba(55, 27, 17, 0.52);border: 0;border-radius: 15px;">
+            <br><br>
+            &nbspX轴缩放:<input type="text" id="imgscalex" value="1" onfocus="javascript:if(value=='1'){ value=''}"
+                             onblur="javascript:if(value==''){value='1'}"
+                             style="height: 20px;width: 50px;color:snow;background-color:rgba(55, 27, 17, 0.52);border: 0;border-radius: 15px;">&nbspY轴缩放:<input
+                    type="text" id="imgscaley" value="1" onfocus="javascript:if(value=='1'){ value=''}"
+                    onblur="javascript:if(value==''){value='1'}"
+                    style="height: 20px;width: 50px;color:snow;background-color:rgba(55, 27, 17, 0.52);border: 0;border-radius: 15px;">
+            透明度:<input type="text" id="imgapl" value="1" onfocus="javascript:if(value=='1'){ value=''}"
+                       onblur="javascript:if(value==''){value='1'}"
+                       style="height: 20px;width: 50px;color:snow;background-color:rgba(55, 27, 17, 0.52);border: 0;border-radius: 15px;">
+            水平倾斜:<input type="text" id="imgspqx" value="0" onfocus="javascript:if(value=='0'){ value=''}"
+                        onblur="javascript:if(value==''){value='0'}"
+                        style="height: 20px;width: 50px;color:snow;background-color:rgba(55, 27, 17, 0.52);border: 0;border-radius: 15px;">
+            垂直倾斜:<input type="text" id="imgczqx" value="0" onfocus="javascript:if(value=='0'){ value=''}"
+                        onblur="javascript:if(value==''){value='0'}"
+                        style="height: 20px;width: 50px;color:snow;background-color:rgba(55, 27, 17, 0.52);border: 0;border-radius: 15px;">
+            <br>
+            <input type="color" id="colorsd" style="display: none; " onchange="changeColor(this);">
+
+        <p>&nbsp滤镜偏移:<input type="text" id="imgblur" value="0" onfocus="javascript:if(value=='0'){ value=''}"
+                            onblur="javascript:if(value==''){value='0'}"
+                            style="height: 20px;width: 50px;color:snow;background-color:rgba(55, 27, 17, 0.52);border: 0;border-radius: 15px;">
+            X偏移:<input type="text" id="imgoffsetx" value="0" onfocus="javascript:if(value=='0'){ value=''}"
+                       onblur="javascript:if(value==''){value='0'}"
+                       style="height: 20px;width: 50px;color:snow;background-color:rgba(55, 27, 17, 0.52);border: 0;border-radius: 15px;">
+            Y偏移:<input type="text" id="imgoffsety" value="0" onfocus="javascript:if(value=='0'){ value=''}"
+                       onblur="javascript:if(value==''){value='0'}"
+                       style="height: 20px;width: 50px;color:snow;background-color:rgba(55, 27, 17, 0.52);border: 0;border-radius: 15px;">
+            &nbsp颜色<span id="imgshadowcolor"
+                         style="height: 20px;width: 65px;color:snow;background-color:rgba(218, 14, 120, 0.4);border: 0;font-size: 20px;cursor:pointer"
+                         onclick="javascript:return document.getElementById('colorsd').click()">■</span>&nbsp
+            <input type="button"
+                   style="border: 0;background-color:rgba(55, 27, 17, 0.52);color:snow;font-size: 15px;border-radius: 10px"
+                   value="上传图片" onclick="javascript:return document.getElementById('picupload').click();"> 角度:<input
+                    type="text" id="imgrotate" value="0" onfocus="javascript:if(value=='0'){ value=''}"
+                    onblur="javascript:if(value==''){value='0'}"
+                    style="border-radius: 15px;height: 20px;width: 30px;color:snow;background-color:rgba(55, 27, 17, 0.52);border: 0;">
+
+            <br><br>
+            &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp<input type="button" id="tjyj"
+                                                                                                onclick="addmc();"
+                                                                                                value="添加元件"
+                                                                                                style="border-radius: 15px;border: 0;background-color:rgba(55, 27, 17, 0.52);color: snow;font-size: 15px;border-radius: 10px">
+
+        </p>
+        </p>
+        <p></p>
+    </div>
+</div>
+
+
+<!----------工具集用于修改场景中的显示时间和其他动画特效以及修改元件的属性------------>
+<div id="tool"
+     style="position :absolute;left:585px;top:368px;width:670px;height:250px;background-color: rgb(172, 53, 113);border-radius: 30px;color:snow">
+    <div id="quanju" style="width:350px;height: 240px;text-align: center">
+        <h4 style="margin: 0 auto">元件属性</h4>
+
+        <div style="text-align: left">
+
+
+        </div>
+
+    </div>
+    <div id="属性" style="width:350px;height: 240px; ;position: relative;left:320px;top:-240px;text-align: center;">
+        <h4 style="margin: 0 auto"> 动画特效</h4>
+        <br>
+        <script type="text/javascript">
+            /**
+             * 打开特效开关
+             */
+            function txkgcz() {
+
+                if ($s("txkgbz").innerText == '关') {
+                    $s("txkgbz").innerText = '开';
+                    if ($s("bjid") != null && $s("bjid") != "") {
+                        if (getCurrentzjkj($s("bjid").value) != null) {
+                            getCurrentzjkj($s("bjid").value).txkg = true;
+                        }
+                    }
+
+                    /**
+                     * 开后任务
+                     */
+                } else {
+                    $s("txkgbz").innerText = '关';
+
+                    if ($s("bjid") != null && $s("bjid") != "") {
+                        if (getCurrentzjkj($s("bjid").value) != null) {
+                            getCurrentzjkj($s("bjid").value).txkg = false;
+                        }
+                    }
+
+                }
+            }
+
+
+            //旋转设置
+            function qdzzsd() {
+
+                if ($s('zzsdsz') != null && $s('zzsdsz').value != null && $s('zzsdsz').value != "") {
+                    var k = quzhib("zzsdsz");
+                    getCurrentzjkj($s("bjid").value).action = function () {
+
+
+                        selfRotate(this, k);
+
+
+                    }
+
+                }
+
+            }
+
+            function quzhib(id) {
+
+                if ($s(id) != null && $s(id).value != '' && $s(id).value != null) {
+                    try {
+                        var k = parseFloat($s(id).value);
+                    } catch (e) {
+
+                        alert('输入的值有问题！');
+                    }
+
+                }
+                return k;
+            }
+            //圆运动设置
+            function yydszqd() {
+                var yydspeed = 5;
+                var wrdx = 50;
+                var wrdy = 50;
+                var r1 = 50, r2 = 50;
+                yydspeed = quzhib('yyysdsz');
+                wrdx = quzhib('wrdXsz');
+                wrdy = quzhib('wrdYsz');
+                r2 = quzhib('r2sz');
+                r1 = quzhib('r1sz');
+                getCurrentzjkj($s("bjid").value).action = function () {
+                    circleSport(this, wrdx, wrdy, r1, r2, yydspeed);
+                }
+            }
+
+            //特效切换
+            function changetx() {
+
+                var val = getSelectValue('xztxc');
+                $s('yjtxsz').innerHTML = '';
+
+                if ($s("bjid") != null && $s("bjid") != "") {
+                    if (getCurrentzjkj($s("bjid").value) != null) {
+
+                        if (val == '无特效') {
+                            getCurrentzjkj($s("bjid").value).action = function () {
+                                $s('yjtxsz').innerHTML = '<p>此元件无特效</p>';
+                            }
+
+                        } else if (val == "旋转") {
+                            $s('yjtxsz').innerHTML = '<br><p>自转速度设置：<input type="text" id="zzsdsz" value="5" style="width:50px;border-radius: 20px;background-color: #ac3571;color:snow;" onblur="qdzzsd();"><span style="background-color: #b8496f;cursor: pointer">[确定]</span></p>';
+                            var zsspeed = 5;
+                            zsspeed = quzhib('zzsdsz');
+                            getCurrentzjkj($s("bjid").value).action = function () {
+
+
+                                selfRotate(this, zsspeed);
+
+
+                            }
+                        } else if (val == "圆运动") {
+                            $s('yjtxsz').innerHTML = '<br><p>运动速度设置：<input type="text" id="yyysdsz" value="5" style="width:50px;border-radius: 20px;background-color: #ac3571;color:snow;">' +
+                                    '<br>围绕点X设置<span><input type="text"  id="wrdXsz" value="50" style="width:50px;border-radius: 20px;background-color: #ac3571;color:snow;">' +
+                                    '</span><br>围绕点Y设置<span><input type="text" id="wrdYsz" value="50" style="width:50px;border-radius: 20px;background-color: #ac3571;color:snow;">' +
+                                    '</span><br>半径1设置<span><input type="text" id="r1sz" value="50" style="width:50px;border-radius: 20px;background-color: #ac3571;color:snow;">' +
+                                    '</span><br>半径2设置<span><input type="text" id="r2sz" value="50" style="width:50px;border-radius: 20px;background-color: #ac3571;color:snow;">' +
+                                    '</span><br><span style="background-color: #b8496f;cursor: pointer" onclick="yydszqd();">[确定]</span></p>';
+                            var yydspeed = 5;
+                            var wrdx = 50;
+                            var wrdy = 50;
+                            var r1 = 50, r2 = 50;
+                            yydspeed = quzhib('yyysdsz');
+                            wrdx = quzhib('wrdXsz');
+                            wrdy = quzhib('wrdYsz');
+                            r2 = quzhib('r2sz');
+                            r1 = quzhib('r1sz');
+                            getCurrentzjkj($s("bjid").value).action = function () {
+                                circleSport(this, wrdx, wrdy, r1, r2, yydspeed);
+                            }
+                        } else if (val == "淡出淡入") {
+                            $s('yjtxsz').innerHTML = '<p>此特效无需设置</p>';
+                            getCurrentzjkj($s("bjid").value).action = function () {
+                                if (this.apl >= 1) {
+                                    this.apl = 0.05;
+                                }
+                                this.apl += 0.005;
+                            }
+
+                        } else if (val == "从左到右淡出淡入") {
+                            $s('yjtxsz').innerHTML = '<p>此特效无需设置</p>';
+                            getCurrentzjkj($s("bjid").value).action = function () {
+                                if (this.x <= 450) {
+
+                                    if (this.apl >= 1) {
+                                        this.apl = 0.05;
+                                    }
+                                    this.apl += 0.005;
+
+                                    this.x+=0.5;
+
+
+                                }else{
+
+                                    this.x=450;
+                                    this.apl=0.9;
+                                }
+
+                            }
+
+                        }
+                        else if (val == "进入后放大") {
+                            $s('yjtxsz').innerHTML = '<p>此特效无需设置</p>';
+                            getCurrentzjkj($s("bjid").value).action = function () {
+
+                                if(this.x<=260){
+                                    this.x+=2;
+
+                                }else{
+                                    this.scalex=2;
+                                    this.scaley=2;
+                                }
+                            }
+
+                        } else if (val == "从左弹入") {
+                            $s('yjtxsz').innerHTML = '<p>此特效无需设置</p>';
+                            getCurrentzjkj($s("bjid").value).action = function () {
+
+                                this.x += (230 - this.x) * 0.1;
+                               // this.y += (targetY - sprite.y) * easing;
+
+
+                            }
+
+                        }
+
+
+//
+
+
+                    }
+
+                }
+
+            }
+
+
+            function changetxsj(e) {
+                if (getCurrentzjkj($s("bjid").value) != null) {
+                    getCurrentzjkj($s("bjid").value).txjstime = 0;
+                    getCurrentzjkj($s("bjid").value).txtime = parseFloat(e.value) * 1000;
+
+                }
+            }
+
+
+            function glcj(){
+
+                $s('cjgl').style.display='block';
+                xscjbh();
+            }
+
+function xscjbh(){
+    $s('dqcjbh').innerText=getCurrentFrame();
+
+
+}
+        </script>
+
+        <div id="txdztool" style="background-color: rgba(232, 89, 143, 0.47);width: 300px;height: 200px;border-radius: 30px;text-align:left;overflow-y: scroll;font-size: 15px">
+            <br>
+
+         <span>&nbsp<input type="button" style="background-color: #b8496f;border-radius: 10px;color:snow" value="特效开关"
+                      onclick="txkgcz();"><span id="txkgbz">关</span><br><br>&nbsp特效种类<select
+                 style="background-color: #ac3571;color:snow;border-radius: 15px;" id="xztxc" onclick="changetx();">
+
+             <option value="1">旋转</option>
+             <option value="2">圆运动</option>
+             <option value="3">淡出淡入</option>
+             <option value="4">从左到右淡出淡入</option>
+             <option value="5">进入后放大</option>
+             <option value="6">从左弹入</option>
+             <option value="7">从下弹入</option>
+             <option value="8">淡上淡入1</option>
+             <option value="9" selected="true">无特效</option>
+
+         </select></span><br><br>
+            <span style="padding: 0;margin: 0;border-radius: 10px;width: 240px"> <span>  &nbsp特效循环：<input
+                    type="checkbox" name="xunhuan" value="0">循环 &nbsp<input type="checkbox" name="xunhuan" value="1"
+                                                                            onclick="javascript:alert(document.getElementsByName('xunhuan').value)">不循环</span></span><br><br>
+            <span style="padding: 0;margin: 0;border-radius: 10px;width: 240px;height: 80px">特效时间:<input
+                    type="range" value="3" min="0" max="60" onchange="changetxsj(this);"
+                    style="background-color: #c84d7b;width: 200px;color: snow;height: 20px;"></span>
+
+            <div id="yjtxsz"
+                 style="background-color: rgba(247, 150, 198, 0.36);width: 280px;height: 200px;border-radius: 30px;margin: 0 auto"></div>
+
+
+        </div>
+    </div>
+
+</div>
+
+<div id="tooly"
+     style="width:100px;height: 490px;position:absolute;left:1260px;top:125px;border-radius: 30px;background-color:rgba(0, 0, 0, 0.62);text-align: center">
+    <br><br>
+    <span style="color: #b8496f;"> 全局属性</span>
+
+
+    <div style="text-align:center">
+        <div id="cjgl" style="color: snow;display:none;position: absolute;left:0px;top:150px;width: 100px;height: 300px;background-color:transparent;border-radius: 50px;border: 2px solid rgb(111, 35, 103)"  onmouseover="javascript:this.style.display='block'" onmouseout="javascript:this.style.display='none'">
+            <br>
+            <br>
+            <span style="color:snow">当前场景编号</span>
+            [<span  style="color:snow" id="dqcjbh">1</span><span  style="color:snow">]场景</span>
+
+        </div>
+
+        <input type="color" id="background" onchange=" changecolor1(this);" style="display: none">
+
+        <p><span style="color: snow;font-size: 14px">舞台背景:</span><span id="backgrounds"
+                                                                       style="color:snow;cursor:pointer"
+                                                                       onclick="javascript:return $s('background').click();">■</span>
+        </p>
+
+
+        <p style="color: snow"><input type="button"
+                                      style="background-color: transparent;color: snow;border-radius: 15px;" value="管理场景"
+                                      onclick="glcj();">
+
+
+        </p>
+
+    </div>
+</div>
+
+
+<div id="toolsz"
+     style="position: absolute;z-index:100;left:600px;top: 400px;width: 300px;height: 200px;background-color: #b8496f;border-radius: 20px;overflow-y: scroll">
+
+    <p style="font-size: 15px">
+        <span style="color:snow">ID值<input readonly="true" id="bjid" type="text"
+                                           style="width: 90px;background-color: #b8496f;border-radius: 10px"
+                                           value=""></span><br>
+
+        <span style="color:snow">宽度值<input id="bjwidth" type="range" style="width: 300px" value="100" max="500" min="0"
+                                           onchange="changeyjwidth(this);"></span><br>
+
+        <span style="color:snow">高度值<input id="bjheight" type="range" style="width: 300px" value="100" max="500" min="0"
+                                           onchange="changeyjheight(this);"></span><br>
+        <span style="color:snow">X倾斜<input id="bjspqx" type="range" style="width: 300px" value="0" max="20" min="-20"
+                                           onchange="changeyjspqx(this);"></span><br>
+        <span style="color:snow">Y倾斜<input id="bjczqx" type="range" style="width: 300px" value="0" max="20" min="-20"
+                                           onchange="changeyjczqx(this);"></span><br>
+        <span style="color:snow">scaleX<input id="bjscalex" type="range" style="width: 300px" value="10" max="50"
+                                              min="0"
+                                              onchange="changeyjscalex(this);"></span><br>
+        <span style="color:snow">scaleY<input id="bjscaley" type="range" style="width: 300px" value="10" max="50"
+                                              min="0"
+                                              onchange="changeyjscaley(this);"></span><br>
+        <span style="color:snow">透明度<input id="bjapl" type="range" style="width: 300px" value="100" max="100" min="0"
+                                           onchange="changeyjapl(this);"></span><br>
+        <span style="color:snow">滤镜偏移<input id="bjblur" type="range" style="width: 300px" value="0" max="200" min="0"
+                                            onchange="changeyjblur(this);"></span><br>
+        <span style="color:snow">X偏移<input id="bjoffsetx" type="range" style="width: 300px" value="0" max="100" min="0"
+                                           onchange="changeyjsetx(this);"></span><br>
+        <span style="color:snow">Y偏移<input id="bjoffsety" type="range" style="width: 300px" value="0" max="100" min="0"
+                                           onchange="changeyjsety(this);"></span><br>
+        <input type="color" id="bjbackcolor" onchange=" changecolor2(this);" style="display: none">
+        <span style="color: snow">滤镜颜色</span><span id="selectcolor1"
+                                                   onclick='javascript:return $s("bjbackcolor").click();'
+                                                   style="height: 20px;width: 65px;color:snow;background-color:rgba(218, 14, 120, 0.4);border: 0;font-size: 20px;cursor:pointer">■</span><br>
+        <br> &nbsp&nbsp&nbsp <input type="button" value="删除元件" onclick="delmv();"
+                                    style="background-color: transparent;color: snow;">
+
+    </p>
+
+
+</div>
+
+
+</body>
+
+
+</html>
+
+
+
